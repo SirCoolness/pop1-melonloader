@@ -20,9 +20,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.melonloader.installer.ApplicationFinder;
-import com.melonloader.installer.R;
+import com.sircoolness.poponeinstaller.R;
 import com.melonloader.installer.SupportedApplication;
-import com.melonloader.installer.databinding.ActivityMainBinding;
+import com.sircoolness.poponeinstaller.databinding.ActivityMainBinding;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
     List<SupportedApplication> supportedApplications;
     ListView listview;
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -40,6 +41,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
         setContentView(R.layout.activity_main);
 
         supportedApplications = ApplicationFinder.GetSupportedApplications(this);
+
 
         SupportedApplicationsAdapter adapter = new SupportedApplicationsAdapter(this, supportedApplications);
 

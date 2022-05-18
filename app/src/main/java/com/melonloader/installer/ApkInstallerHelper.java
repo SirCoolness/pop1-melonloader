@@ -13,6 +13,7 @@ import android.os.Build;
 import android.os.Trace;
 import android.util.Log;
 
+import com.sircoolness.poponeinstaller.BuildConfig;
 import androidx.annotation.Nullable;
 import androidx.core.content.FileProvider;
 

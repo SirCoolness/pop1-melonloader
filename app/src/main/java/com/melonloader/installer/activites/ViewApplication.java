@@ -26,8 +26,9 @@ import android.widget.Toast;
 
 import com.melonloader.installer.ApkInstallerHelper;
 import com.melonloader.installer.ApplicationFinder;
-import com.melonloader.installer.BuildConfig;
-import com.melonloader.installer.R;
+import com.melonloader.installer.InstallationStatus;
+import com.sircoolness.poponeinstaller.BuildConfig;
+import com.sircoolness.poponeinstaller.R;
 import com.melonloader.installer.SupportedApplication;
 import com.melonloader.installer.core.ILogger;
 import com.melonloader.installer.core.Main;
@@ -60,6 +61,9 @@ public class ViewApplication extends AppCompatActivity implements View.OnClickLi
     private LoggerHelper loggerHelper;
     private ApkInstallerHelper installerHelper = null;
 
+    private boolean automated = false;
+    private String outputFile;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,6 +73,12 @@ public class ViewApplication extends AppCompatActivity implements View.OnClickLi
         if (targetPackageName == null) {
             finish();
             return;
+        }
+
+        this.automated = getIntent().getBooleanExtra("target.auto", false);
+
+        if (this.automated) {
+            this.outputFile = getIntent().getStringExtra("target.output_file");
         }
 
         try {
@@ -101,6 +111,12 @@ public class ViewApplication extends AppCompatActivity implements View.OnClickLi
 
         loggerHelper = new LoggerHelper(this);
         Main._properties.logger = loggerHelper;
+
+        setResult(Activity.RESULT_CANCELED);
+
+        if (this.automated) {
+            StartPatching();
+        }
     }
 
     private void requestWritePermission()
@@ -152,6 +168,11 @@ public class ViewApplication extends AppCompatActivity implements View.OnClickLi
         Path tempPath = Paths.get(MelonLoaderBase, "temp", application.appName);
 
         String PublishedBase = Paths.get(Environment.getExternalStorageDirectory().getPath().toString(), "MelonLoader").toString();
+
+        if (this.outputFile != null) {
+            PublishedBase = (new File(this.outputFile)).getParent();
+        }
+
         try {
             Files.createDirectories(Paths.get(PublishedBase));
         } catch (IOException e) {
@@ -173,6 +194,17 @@ public class ViewApplication extends AppCompatActivity implements View.OnClickLi
 
             loggerHelper.Log("Preparing Assets");
 
+            if (this.automated && this.outputFile != null && (new File(this.outputFile)).isFile()) {
+                runOnUiThread(() -> {
+                    Intent resultIntent = new Intent();
+
+//                    resultIntent.putExtra()
+                    setResult(Activity.RESULT_OK, resultIntent);
+                    finish();
+                });
+                return;
+            }
+
             copyAssets("installer_deps.zip", depsLocation);
             copyAssets("zipalign", zipAlignLocation);
 
@@ -183,6 +215,9 @@ public class ViewApplication extends AppCompatActivity implements View.OnClickLi
 
             String outputApkScoped = Paths.get(tempPath.toString(), "base.apk").toString();
             String outputApk = Paths.get(finalPublishedBase, application.packageName + ".apk").toString();
+            if (this.outputFile != null) {
+                outputApk = this.outputFile;
+            }
 
             boolean success = Main.Run(new Properties() {{
                 targetApk = application.apkLocation;
@@ -206,11 +241,21 @@ public class ViewApplication extends AppCompatActivity implements View.OnClickLi
 
                 loggerHelper.Log("Application Successfully patched. Reinstalling.");
 
-                String finalOutputApk = outputApk;
-                runOnUiThread(() -> {
-                    installerHelper = new ApkInstallerHelper(this, application.appName);
-                    installerHelper.InstallApk(Paths.get(finalOutputApk).toString());
-                });
+                if (!this.automated) {
+                    String finalOutputApk = outputApk;
+                    runOnUiThread(() -> {
+                        installerHelper = new ApkInstallerHelper(this, application.appName);
+                        installerHelper.InstallApk(Paths.get(finalOutputApk).toString());
+                    });
+                } else {
+                    runOnUiThread(() -> {
+                        Intent resultIntent = new Intent();
+
+//                    resultIntent.putExtra()
+                        setResult(Activity.RESULT_OK, resultIntent);
+                        finish();
+                    });
+                }
             }
 
             runOnUiThread(() -> {

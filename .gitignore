@@ -15,3 +15,5 @@
 local.properties
 
 app/src/main/assets/installer_deps.zip
+
+app/release/
