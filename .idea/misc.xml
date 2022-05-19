@@ -10,6 +10,7 @@
         <entry key="app/src/main/res/drawable-v24/lemon.xml" value="0.2995" />
         <entry key="app/src/main/res/drawable/ic_launcher_background.xml" value="0.2995" />
         <entry key="app/src/main/res/drawable/ic_launcher_foreground.xml" value="0.2315" />
+        <entry key="app/src/main/res/layout/activity_installer.xml" value="0.1" />
         <entry key="app/src/main/res/layout/activity_main.xml" value="0.5302083333333333" />
         <entry key="app/src/main/res/layout/activity_main2.xml" value="0.5302083333333333" />
         <entry key="app/src/main/res/layout/activity_specialized_game.xml" value="0.1" />

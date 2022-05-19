@@ -28,6 +28,7 @@ import androidx.navigation.ui.NavigationUI;
 import com.melonloader.installer.ApplicationFinder;
 import com.melonloader.installer.GameDefinition;
 import com.melonloader.installer.InstallationStatus;
+import com.melonloader.installer.SplitApkInstaller;
 import com.sircoolness.poponeinstaller.R;
 
 public class SpecializedGame extends AppCompatActivity {
@@ -50,6 +51,16 @@ public class SpecializedGame extends AppCompatActivity {
             }
     );
 
+    ActivityResultLauncher<Intent> installLauncher = registerForActivityResult(
+            new ActivityResultContracts.StartActivityForResult(),
+            new ActivityResultCallback<ActivityResult>() {
+                @Override
+                public void onActivityResult(ActivityResult result) {
+                    OnInstallDone(result);
+                }
+            }
+    );
+
     GameDefinition game = new GameDefinition () {{
         packageName = "com.noodlecake.altosadventure";
         displayName = "Population: ONE";
@@ -62,7 +73,14 @@ public class SpecializedGame extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_specialized_game);
 
-        this.Reload();
+//        this.Reload();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
+        Reload();
     }
 
     protected void Reload()
@@ -132,10 +150,19 @@ public class SpecializedGame extends AppCompatActivity {
 
     public void CompleteInstallation()
     {
-        Toast.makeText(this, "DEBUG PATCH.", Toast.LENGTH_SHORT).show();
-//        Intent intent = new Intent();
-//        intent.setClass(this, ViewApplication.class);
-//        intent.putExtra("target.packageName", this.game.packageName);
-//        intent.putExtra("target.auto", true);
+        // Then you start a new Activity via Intent
+        Intent intent = new Intent();
+        intent.setClass(this, InstallGameActivity.class);
+        intent.putExtra("target.packageName", this.game.packageName);
+        intent.putExtra("target.auto", true);
+        intent.putExtra("target.output_file", this.game.BuildPath());
+
+        installLauncher.launch(intent);
+    }
+
+    public void OnInstallDone(ActivityResult result)
+    {
+        Toast.makeText(this, "Install Status " + result.getResultCode(), Toast.LENGTH_SHORT).show();
+        Reload();
     }
 }

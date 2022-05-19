@@ -71,6 +71,7 @@ public class ViewApplication extends AppCompatActivity implements View.OnClickLi
 
         String targetPackageName = getIntent().getStringExtra("target.packageName");
         if (targetPackageName == null) {
+            setResult(Activity.RESULT_CANCELED);
             finish();
             return;
         }

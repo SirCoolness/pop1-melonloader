@@ -42,7 +42,7 @@ public class ApkInstallerHelper {
         UninstallPackage();
     }
 
-    protected void InternalInstall(String path)
+    public void InternalInstall(String path)
     {
         AsyncTask.execute(() -> {
             try {
