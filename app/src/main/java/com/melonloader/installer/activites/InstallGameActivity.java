@@ -39,6 +39,7 @@ public class InstallGameActivity extends AppCompatActivity {
 
     private boolean pending = false;
     private boolean failed = false;
+    private boolean firstTime = true;
 
     private SplitApkInstaller installer;
 
@@ -118,7 +119,8 @@ public class InstallGameActivity extends AppCompatActivity {
         this.failed = true;
         Reload();
 
-        if (automated) {
+        if (automated && this.firstTime) {
+            this.firstTime = false;
             StartInstall();
         }
     }

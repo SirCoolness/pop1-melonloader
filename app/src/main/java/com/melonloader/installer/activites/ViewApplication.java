@@ -195,16 +195,16 @@ public class ViewApplication extends AppCompatActivity implements View.OnClickLi
 
             loggerHelper.Log("Preparing Assets");
 
-            if (this.automated && this.outputFile != null && (new File(this.outputFile)).isFile()) {
-                runOnUiThread(() -> {
-                    Intent resultIntent = new Intent();
-
-//                    resultIntent.putExtra()
-                    setResult(Activity.RESULT_OK, resultIntent);
-                    finish();
-                });
-                return;
-            }
+//            if (this.automated && this.outputFile != null && (new File(this.outputFile)).isFile()) {
+//                runOnUiThread(() -> {
+//                    Intent resultIntent = new Intent();
+//
+////                    resultIntent.putExtra()
+//                    setResult(Activity.RESULT_OK, resultIntent);
+//                    finish();
+//                });
+//                return;
+//            }
 
             copyAssets("installer_deps.zip", depsLocation);
             copyAssets("zipalign", zipAlignLocation);

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Pop1 Mod Installer</string>
+    <string name="app_name">Population: ONE bHaptics Installer</string>
     <string name="title_activity_view_supported_application">ViewSupportedApplication</string>
     <!-- Strings used for fragments for navigation -->
     <string name="first_fragment_label">First Fragment</string>
@@ -11,4 +11,5 @@
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
     <string name="title_activity_main2">MainActivity2</string>
     <string name="title_activity_specialized_game">SpecializedGame</string>
+    <string name="app_version_simple">0.1.0 [ALPHA]</string>
 </resources>
