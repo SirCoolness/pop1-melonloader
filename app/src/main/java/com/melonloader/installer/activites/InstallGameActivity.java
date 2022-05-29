@@ -35,6 +35,7 @@ public class InstallGameActivity extends AppCompatActivity {
 
     private String targetPackageName;
     private boolean automated = false;
+    private boolean skipUninstall = false;
     private String outputFile;
 
     private boolean pending = false;
@@ -103,6 +104,7 @@ public class InstallGameActivity extends AppCompatActivity {
         }
 
         this.automated = getIntent().getBooleanExtra("target.auto", false);
+        this.skipUninstall = getIntent().getBooleanExtra("target.install_only", false);
 
         if (this.automated) {
             this.outputFile = getIntent().getStringExtra("target.output_file");
@@ -194,7 +196,7 @@ public class InstallGameActivity extends AppCompatActivity {
 
         Reload();
 
-        if (CheckIfInstalled()) {
+        if (!skipUninstall && CheckIfInstalled()) {
             UninstallPackage(targetPackageName);
             return;
         }

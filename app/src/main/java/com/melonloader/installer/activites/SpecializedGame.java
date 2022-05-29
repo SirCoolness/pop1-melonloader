@@ -2,9 +2,12 @@ package com.melonloader.installer.activites;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import com.google.android.material.snackbar.Snackbar;
@@ -23,6 +26,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.fragment.app.DialogFragment;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
 import androidx.navigation.ui.AppBarConfiguration;
@@ -30,15 +34,24 @@ import androidx.navigation.ui.NavigationUI;
 
 import com.melonloader.installer.ApplicationFinder;
 import com.melonloader.installer.GameDefinition;
+import com.melonloader.installer.GenericDialogFrament;
 import com.melonloader.installer.InstallationStatus;
+import com.melonloader.installer.ServerSideSettings;
 import com.melonloader.installer.SplitApkInstaller;
 import com.sircoolness.poponeinstaller.R;
 
+import org.json.JSONException;
+
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -86,6 +99,7 @@ public class SpecializedGame extends AppCompatActivity {
     );
 
     GameDefinition game;
+    ServerSideSettings settings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -100,6 +114,18 @@ public class SpecializedGame extends AppCompatActivity {
         }};
 
         setContentView(R.layout.activity_specialized_game);
+
+        AsyncTask.execute(() -> {
+            try {
+                settings = ServerSideSettings.Get();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+
+            runOnUiThread(() -> HandleSettingsReady(0));
+        });
 
 //        this.Reload();
     }
@@ -279,5 +305,124 @@ public class SpecializedGame extends AppCompatActivity {
 
     private void toast(String message) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
+    private void HandleSettingsReady(int step) {
+        URL apkUrl = null;
+        try {
+            apkUrl = new URL(settings.ApkUrl);
+        } catch (MalformedURLException e) {
+            e.printStackTrace();
+        }
+
+        switch (step) {
+            case 0:
+                if (settings.ShowCustomPrompt && settings.CustomPromptMessage.length() > 0) {
+                    AlertMessage(settings.CustomPromptMessage, () -> {
+                        HandleSettingsReady(1);
+                    });
+                    return;
+                }
+                break;
+        }
+
+        if (settings.LatestVersion == getResources().getString(R.string.app_version_simple) || apkUrl == null) {
+            return;
+        }
+
+        GenericDialogFrament newFragment = new GenericDialogFrament(getResources().getString(R.string.app_name) + " needs to be updated.");
+        if (!settings.ForceUpdate) {
+            newFragment.negativeAnswer = "cancel";
+            newFragment.afterPositive = () -> UpdateApp();
+        } else {
+            newFragment.after = () -> UpdateApp();
+        }
+
+        newFragment.show(getSupportFragmentManager(), "Install Prompt");
+    }
+
+    private void AlertMessage(String message, Runnable after) {
+        GenericDialogFrament newFragment = new GenericDialogFrament(message);
+        newFragment.after = after;
+        newFragment.show(getSupportFragmentManager(), "Server Message");
+    }
+
+    private void UpdateApp() {
+        String downloadLocation = Paths.get(getExternalFilesDir(null).toString(), "update_app.apk").toString();
+
+        AsyncTask.execute(() -> {
+            if (settings.ApkUrl == null)
+                return;
+
+            Log.i(getLocalClassName(), "Downloading [" + settings.ApkUrl.toString() + "]");
+
+            URL url = null;
+            URLConnection connection = null;
+            try {
+                url = new URL(settings.ApkUrl);
+
+                connection = url.openConnection();
+                connection.connect();
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                return;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return;
+            }
+
+            int lenghtOfFile = connection.getContentLength();
+
+            Log.i(getLocalClassName(), "File Size " + lenghtOfFile);
+
+            // download the file
+            InputStream input = null;
+            try {
+                input = new BufferedInputStream(url.openStream(),
+                        8192);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return;
+            }
+
+            // Output stream
+            OutputStream output = null;
+            try {
+                output = new FileOutputStream(downloadLocation);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+                return;
+            }
+
+            byte data[] = new byte[8192];
+
+            try {
+                int count;
+                while ((count = input.read(data)) != -1) {
+                    output.write(data, 0, count);
+                }
+
+                output.flush();
+
+                // closing streams
+                output.close();
+                input.close();
+            } catch (IOException e)
+            {
+                e.printStackTrace();
+                return;
+            }
+
+            runOnUiThread(() -> {
+                Intent intent = new Intent();
+                intent.setClass(this, InstallGameActivity.class);
+                intent.putExtra("target.packageName", this.game.packageName);
+                intent.putExtra("target.auto", true);
+                intent.putExtra("target.install_only", true);
+                intent.putExtra("target.output_file", downloadLocation);
+
+                startActivity(intent);
+            });
+        });
     }
 }
