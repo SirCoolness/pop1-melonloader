@@ -74,6 +74,8 @@ public class InstallGameActivity extends AppCompatActivity {
                 public void onActivityResult(ActivityResult result) {
                     LogStatus(result);
 
+                    Log.i(getLocalClassName(), "onActivityResult: " + result.getResultCode());
+
                     if (!CheckIfInstalled()) {
                         OnFail();
                         return;
@@ -108,15 +110,16 @@ public class InstallGameActivity extends AppCompatActivity {
 
         ActionBar actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
+
+        Log.e("melonloader", "on create");
+        this.pending = false;
+        this.failed = true;
     }
 
     @Override
     protected void onStart() {
         super.onStart();
 
-        Log.e("melonloader", "on create");
-        this.pending = false;
-        this.failed = true;
         Reload();
 
         if (automated && this.firstTime) {
@@ -135,6 +138,7 @@ public class InstallGameActivity extends AppCompatActivity {
         TextView loadingStatus = findViewById(R.id.loadingStatus);
 
         retryButton.setEnabled(false);
+        retryButton.setText("retry");
         retryMessage.setText("Failed to install application.");
 
         loadingStatus.setText("Installing patched apk.");
@@ -220,6 +224,6 @@ public class InstallGameActivity extends AppCompatActivity {
 
     protected void LogStatus(ActivityResult result)
     {
-        Toast.makeText(this, "Install Status " + result.getResultCode(), Toast.LENGTH_SHORT).show();
+        Log.d(getLocalClassName(), "Install Status " + result.getResultCode());
     }
 }

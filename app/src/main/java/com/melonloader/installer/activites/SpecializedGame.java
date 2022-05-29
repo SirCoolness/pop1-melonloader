@@ -39,6 +39,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -73,16 +74,31 @@ public class SpecializedGame extends AppCompatActivity {
             }
     );
 
-    GameDefinition game = new GameDefinition () {{
-        packageName = "com.BigBoxVR.PopulationONE";
-        displayName = "Population: ONE";
-        webSlug = "population_one";
-    }};
+    ActivityResultLauncher<String> requestPermissionsAndMod = registerForActivityResult(
+            new ActivityResultContracts.RequestPermission(),
+            isGranted -> {
+                if (isGranted) {
+                    InstallMods();
+                } else {
+                    toast("Missing required permissions.");
+                }
+            }
+    );
+
+    GameDefinition game;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
         super.onCreate(savedInstanceState);
+
+        this.game = new GameDefinition (this) {{
+            packageName = "com.BigBoxVR.PopulationONE";
+//            packageName = "com.noodlecake.altosadventure";
+            displayName = "Population: ONE";
+            webSlug = "population_one";
+        }};
+
         setContentView(R.layout.activity_specialized_game);
 
 //        this.Reload();
@@ -104,6 +120,7 @@ public class SpecializedGame extends AppCompatActivity {
 
     public void ReloadButtons()
     {
+        Log.i("GameStatus", game.status.toString());
         TextView textView = (TextView) findViewById(R.id.applicationName);
         textView.setText(this.game.displayName);
 
@@ -122,17 +139,9 @@ public class SpecializedGame extends AppCompatActivity {
 //        modsButton.setText("Mods");
         modsButton.setEnabled(this.game.status == InstallationStatus.PATCHED);
         modsButton.setOnClickListener((View var1) -> {
-            try {
-                InstallMods();
-                Toast.makeText(this, "Mods Installed.", Toast.LENGTH_SHORT).show();
-            } catch (IOException e) {
-                e.printStackTrace();
-
-                Toast.makeText(this, "Failed to install mods.", Toast.LENGTH_SHORT).show();
-            }
+            InstallMods();
         });
 
-        installButton.setVisibility(View.GONE);
         installButton.setText("Finish Installation");
         installButton.setOnClickListener((View var1) -> {
             this.CompleteInstallation();
@@ -151,7 +160,22 @@ public class SpecializedGame extends AppCompatActivity {
         switch (this.game.status) {
             case NOT_INSTALLED:
             case OUTDATED:
+            case PATCHED:
+                installButton.setVisibility(View.GONE);
+                break;
+            default:
+                if (game.PatchedApkExists()) {
+                    installButton.setVisibility(View.VISIBLE);
+                } else {
+                    installButton.setVisibility(View.GONE);
+                }
+        }
+
+        switch (this.game.status) {
+            case NOT_INSTALLED:
+            case OUTDATED:
                 patchButton.setEnabled(false);
+                installButton.setVisibility(View.GONE);
                 break;
             default:
                 patchButton.setEnabled(this.game.installation != null);
@@ -163,7 +187,6 @@ public class SpecializedGame extends AppCompatActivity {
                 break;
             case INSTALL_READY:
                 patchButton.setText("Patch");
-                installButton.setVisibility(View.VISIBLE);
                 break;
             case NOT_INSTALLED:
                 patchButton.setText("Not Installed");
@@ -188,38 +211,41 @@ public class SpecializedGame extends AppCompatActivity {
         installLauncher.launch(intent);
     }
 
-    public void InstallMods() throws IOException {
+    public void InstallMods() {
         String modsFolder = "/storage/emulated/0/Android/data/" + this.game.packageName + "/files/Mods";
 
-        requestWritePermission();
-        Files.createDirectories(Paths.get(modsFolder));
+        try {
+            requestWritePermission();
+            Files.createDirectories(Paths.get(modsFolder));
 
-        requestWritePermission();
-        copyAssets("mods/AuthenticationHelper.dll", modsFolder + "/AuthenticationHelper.dll");
+            requestWritePermission();
+            copyAssets("mods/AuthenticationHelper.dll", modsFolder + "/AuthenticationHelper.dll");
 
-        requestWritePermission();
-        copyAssets("mods/BhapticsPopOne.dll", modsFolder + "/BhapticsPopOne.dll");
+            requestWritePermission();
+            copyAssets("mods/BhapticsPopOne.dll", modsFolder + "/BhapticsPopOne.dll");
+
+            toast("Mods Installed.");
+        } catch (IOException e) {
+            e.printStackTrace();
+
+            toast("Failed to install mods.");
+        } catch (Exception e) {
+            toast("Requesting Permission.");
+        }
     }
 
     public void OnInstallDone(ActivityResult result)
     {
-        Toast.makeText(this, "Install Status " + result.getResultCode(), Toast.LENGTH_SHORT).show();
+        toast("Install Status " + result.getResultCode());
         Reload();
 
-        try {
-            InstallMods();
-            Toast.makeText(this, "Mods Installed.", Toast.LENGTH_SHORT).show();
-        } catch (IOException e) {
-            e.printStackTrace();
-
-            Toast.makeText(this, "Failed to install mods.", Toast.LENGTH_SHORT).show();
-        }
+        InstallMods();
     }
 
-    private void requestWritePermission()
-    {
+    private void requestWritePermission() throws Exception {
         if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[] { Manifest.permission.WRITE_EXTERNAL_STORAGE }, 100);
+            requestPermissionsAndMod.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+            throw new Exception("Requesting Permissions");
         }
     }
 
@@ -249,5 +275,9 @@ public class SpecializedGame extends AppCompatActivity {
         while((read = in.read(buffer)) != -1){
             out.write(buffer, 0, read);
         }
+    }
+
+    private void toast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 }

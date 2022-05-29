@@ -15,9 +15,16 @@ public class GameDefinition {
     public SupportedApplication installation = null;
     public InstallationStatus status = InstallationStatus.NOT_INSTALLED;
 
+    private String baseDir;
+
+    public GameDefinition(Context context)
+    {
+        baseDir = context.getExternalFilesDir(null).toString();
+    }
+
     public String BuildPath()
     {
-        return Paths.get(Environment.getExternalStorageDirectory().getPath().toString(), "MelonLoader", this.packageName + ".apk").toString();
+        return Paths.get(baseDir, "Builds", this.packageName + ".apk").toString();
     }
 
     public void Resolve(Context context)
@@ -33,12 +40,9 @@ public class GameDefinition {
         }
 
         if (installation == null) {
-            String apkPath = BuildPath();
-
-            if ((new File(apkPath)).isFile()) {
+            if (PatchedApkExists()) {
                 this.status = InstallationStatus.INSTALL_READY;
             }
-
             return;
         }
 
@@ -50,5 +54,12 @@ public class GameDefinition {
 
         this.status = InstallationStatus.PATCHED;
         // check if outdated
+    }
+
+    public boolean PatchedApkExists()
+    {
+        String apkPath = BuildPath();
+
+        return (new File(apkPath)).isFile();
     }
 }
