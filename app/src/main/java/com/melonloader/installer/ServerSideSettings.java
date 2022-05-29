@@ -22,6 +22,21 @@ public class ServerSideSettings {
     private static String[] authorizedDomains = new String[] {"sircoolness.dev", "sidequestvr.com"};
     private static ServerSideSettings result = null;
 
+    public static ServerSideSettings Reload()
+    {
+        result = null;
+
+        try {
+            return Get();
+        } catch (JSONException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
     public static ServerSideSettings Get() throws IOException, JSONException {
         if (result != null)
             return result;

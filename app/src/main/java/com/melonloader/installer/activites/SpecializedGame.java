@@ -116,12 +116,9 @@ public class SpecializedGame extends AppCompatActivity {
         setContentView(R.layout.activity_specialized_game);
 
         AsyncTask.execute(() -> {
-            try {
-                settings = ServerSideSettings.Get();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (JSONException e) {
-                e.printStackTrace();
+            settings = ServerSideSettings.Reload();
+            if (settings == null) {
+                return;
             }
 
             runOnUiThread(() -> HandleSettingsReady(0));
@@ -326,7 +323,7 @@ public class SpecializedGame extends AppCompatActivity {
                 break;
         }
 
-        if (settings.LatestVersion == getResources().getString(R.string.app_version_simple) || apkUrl == null) {
+        if (settings.LatestVersion.equals(getResources().getString(R.string.app_version_simple)) || apkUrl == null) {
             return;
         }
 
